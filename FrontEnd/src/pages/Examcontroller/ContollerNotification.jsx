@@ -15,8 +15,8 @@ const ContollerNotification = () => {
   const [reload, setReload] = useState(false)
 
   const dropdownRef = useRef(null)
-  console.log(notifications,"nt");
-  
+  console.log(notifications, "nt");
+
 
 
 
@@ -31,8 +31,8 @@ const ContollerNotification = () => {
         const response = await axios.get('/getNotifications', {
           withCredentials: true
         })
-          console.log(response,"res");
-          
+        console.log(response, "res");
+
         setNotifications(response.data.notifications || [])
       } catch (error) {
         console.error('Error fetching notifications:', error)
@@ -405,19 +405,29 @@ const ContollerNotification = () => {
                 <p className="text-gray-500 text-center py-8">No notifications sent yet.</p>
               ) : (
                 notifications.flat().map(notification => (
-                  <div key={notification.teacherIds} className="border border-gray-200 rounded-lg p-4">
+                  <div key={notification._id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-gray-900">{notification.teacherIds || 0} </h3>
+                          <h3 className="font-semibold text-gray-900 line-clamp-1">{notification.title} </h3>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(notification.priority)}`}>
                             {notification.priority}
                           </span>
                         </div>
                         <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>To: {notification.type === 'all' ? 'All Teachers' : `${notification.length} Teachers`}</span>
-                          <span>{new Date(notification.updatedAt).toLocaleString()}</span>
+                        <div className="flex flex-col gap-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-4">
+                            <span className="font-medium">
+                              To: {notification.type === 'all' ? 'All Teachers' :
+                                notification.teacherIds?.map(t => t.name).join(', ') || '0 Teachers'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <span>{new Date(notification.updatedAt).toLocaleString()}</span>
+                            {notification.type === 'specific' && (
+                              <span>{notification.teacherIds?.length || 0} Recipients</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <button

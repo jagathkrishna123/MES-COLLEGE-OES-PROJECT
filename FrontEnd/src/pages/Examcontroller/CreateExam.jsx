@@ -613,6 +613,7 @@ const CreateExam = () => {
                               !selectedStudentIds.includes(s._id) ||
                               s._id === student.studentId,
                           )
+                          .sort((a, b) => a.studentName.localeCompare(b.studentName))
                           .map((s) => (
                             <option key={s._id} value={s._id}>
                               {s.studentName} ({s.studentRoll})

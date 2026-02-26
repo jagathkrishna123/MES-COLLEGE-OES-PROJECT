@@ -32,6 +32,14 @@ const StudentEvaluation = () => {
   useEffect(() => {
     localStorage.setItem("lastQuestionCount", questionCount);
   }, [questionCount]);
+
+  // Persist outOfMarks structure to localStorage
+  useEffect(() => {
+    if (Object.keys(outOfMarks).length > 0) {
+      localStorage.setItem("lastOutOfMarks", JSON.stringify(outOfMarks));
+    }
+  }, [outOfMarks]);
+
   const [blobUrls, setBlobUrls] = useState({}); // Track blob URLs for cleanup
   const [studentid, setStudentId] = useState()
   const [examid, setExamId] = useState()
@@ -235,12 +243,20 @@ const StudentEvaluation = () => {
     if (exam && student && Object.keys(marks).length === 0) {
       const initialMarks = {};
       const initialOutOfMarks = {};
-      // Ensure we use the correct count for initialization
+
+      // Load saved scheme or fallback to localStorage, then default 10
+      const savedOutOfMarks = student?.outOfMarksStructure
+        ? (student.outOfMarksStructure instanceof Map
+          ? Object.fromEntries(student.outOfMarksStructure)
+          : student.outOfMarksStructure)
+        : JSON.parse(localStorage.getItem("lastOutOfMarks") || "{}");
+
       const countToUse = student?.questionCount || questionCount;
 
       for (let i = 1; i <= countToUse; i++) {
-        initialMarks[`q${i}`] = 0;
-        initialOutOfMarks[`q${i}`] = 10;
+        const qKey = `q${i}`;
+        initialMarks[qKey] = 0;
+        initialOutOfMarks[qKey] = savedOutOfMarks[qKey] !== undefined ? savedOutOfMarks[qKey] : 10;
       }
       setMarks(initialMarks);
       setOutOfMarks(initialOutOfMarks);
@@ -251,6 +267,7 @@ const StudentEvaluation = () => {
       }
     }
   }, [exam, student, questionCount, marks]);
+
 
   // Calculate totals using useMemo for reactive computation
   const { calculatedTotalMarks, calculatedTotalPossibleMarks } = useMemo(() => {
@@ -286,14 +303,42 @@ const StudentEvaluation = () => {
     setTotalPossibleMarks(calculatedTotalPossibleMarks);
   }, [calculatedTotalMarks, calculatedTotalPossibleMarks]);
 
+  // const handleMarkChange = (question, value) => {
+  //   const newMarks = { ...marks, [question]: parseFloat(value) || 0 };
+  //   setMarks(newMarks);
+  // };
+
   const handleMarkChange = (question, value) => {
-    const newMarks = { ...marks, [question]: parseFloat(value) || 0 };
-    setMarks(newMarks);
+    const enteredMark = parseFloat(value) || 0;
+    const maxMark = parseFloat(outOfMarks[question]) || 0;
+
+    // Clamp value between 0 and maxMark
+    const validMark = Math.min(Math.max(enteredMark, 0), maxMark);
+
+    setMarks(prev => ({
+      ...prev,
+      [question]: validMark
+    }));
   };
 
+  // const handleOutOfMarksChange = (question, value) => {
+  //   const newOutOfMarks = { ...outOfMarks, [question]: parseFloat(value) || 0 };
+  //   setOutOfMarks(newOutOfMarks);
+  // };
+
   const handleOutOfMarksChange = (question, value) => {
-    const newOutOfMarks = { ...outOfMarks, [question]: parseFloat(value) || 0 };
-    setOutOfMarks(newOutOfMarks);
+    const newOutOf = parseFloat(value) || 0;
+
+    setOutOfMarks(prev => ({
+      ...prev,
+      [question]: newOutOf
+    }));
+
+    // Clamp existing mark if it's now greater than new outOf
+    setMarks(prev => ({
+      ...prev,
+      [question]: Math.min(prev[question] || 0, newOutOf)
+    }));
   };
 
   const handleSubmit = async (examId, studentId, subject) => {
@@ -318,12 +363,14 @@ const StudentEvaluation = () => {
           marks: totalMarks,
           outOfMarks: totalPossibleMarks,
           comments,
-          questionCount   // ✅ ADD THIS
+          questionCount,
+          outOfMarksStructure: outOfMarks // ✅ SAVE IT HERE
         },
         {
           withCredentials: true // ✅ IMPORTANT
         }
       );
+
 
       // 🔹 Update local exam data after success
       const updatedExam = {
@@ -337,6 +384,7 @@ const StudentEvaluation = () => {
               marks: totalMarks,
               outOfMarks: totalPossibleMarks,
               questionCount,     // ✅ SAVE IT HERE
+              outOfMarksStructure: outOfMarks, // ✅ AND HERE
               evaluationDate: new Date().toISOString()
             }
             : s
@@ -423,17 +471,21 @@ const StudentEvaluation = () => {
                   const newCount = parseInt(e.target.value);
                   setQuestionCount(newCount);
 
-                  // Clean up marks and out-of-marks to only include current questions
                   const newMarks = {};
                   const newOutOfMarks = {};
+                  const lastUsedOutOfMarks = JSON.parse(localStorage.getItem("lastOutOfMarks") || "{}");
+
                   for (let i = 1; i <= newCount; i++) {
-                    newMarks[`q${i}`] = marks[`q${i}`] || 0;
-                    newOutOfMarks[`q${i}`] = outOfMarks[`q${i}`] || 10;
+                    const qKey = `q${i}`;
+                    newMarks[qKey] = marks[qKey] || 0;
+                    newOutOfMarks[qKey] =
+                      student?.outOfMarksStructure?.[qKey] ??
+                      lastUsedOutOfMarks?.[qKey] ??
+                      10;
                   }
+
                   setMarks(newMarks);
                   setOutOfMarks(newOutOfMarks);
-
-                  // Totals will be recalculated automatically by useEffect
                 }}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
@@ -704,8 +756,12 @@ const StudentEvaluation = () => {
                       onChange={(e) => handleOutOfMarksChange(`q${q}`, e.target.value)}
                       className="w-12 px-1 py-1 border border-gray-300 rounded text-center text-xs bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     >
+                      <option value={1}>1</option>
                       <option value={2}>2</option>
+                      <option value={3}>3</option>
+                      <option value={4}>4</option>
                       <option value={5}>5</option>
+                      <option value={8}>8</option>
                       <option value={10}>10</option>
                       <option value={15}>15</option>
                       <option value={20}>20</option>

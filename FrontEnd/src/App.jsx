@@ -23,6 +23,8 @@ import StudentEvaluation from "./pages/Teacher/StudentEvaluation";
 import ScrollToTop from "./components/ScrollToTop";
 import AllStudents from "./pages/Examcontroller/AllStudents";
 import StudentResults from "./components/StudentResults";
+import Analytics from "./pages/Examcontroller/Analytics";
+import TeacherAnalytics from "./pages/Teacher/TeacherAnalytics";
 const App = () => {
   const { pathname } = useLocation();
   const hideLayout = pathname.includes("admin") || pathname.includes("teacher") || pathname.includes("controller");
@@ -32,7 +34,7 @@ const App = () => {
 
   return (
     <div>
-      <ScrollToTop/>
+      <ScrollToTop />
       {!hideLayout && <Navbar />}
 
       <Routes>
@@ -57,6 +59,7 @@ const App = () => {
           />{" "}
           {/* per-student */}
           <Route path="notification" element={<Notification />} />
+          <Route path="analytics" element={<TeacherAnalytics />} />
         </Route>
 
         <Route path="/controller" element={<ControllerLayout />}>
@@ -69,7 +72,8 @@ const App = () => {
             element={<ContollerNotification />}
           />
           <Route path="resultsmanage-" element={<ManageResults />} />
-          <Route path="allstudents" element={<AllStudents/>} />
+          <Route path="allstudents" element={<AllStudents />} />
+          <Route path="analytics" element={<Analytics />} />
         </Route>
       </Routes>
 

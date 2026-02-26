@@ -126,6 +126,8 @@ export const evaluateExam = async (req, res) => {
       marks,
       outOfMarks,
       comments,
+      outOfMarksStructure,
+      questionCount,
     } = req.body;
 
     const { role } = req.user;
@@ -148,6 +150,7 @@ export const evaluateExam = async (req, res) => {
         message: "Missing required fields",
       });
     }
+
 
     if (!mongoose.Types.ObjectId.isValid(examId)) {
       return res.status(400).json({
@@ -224,7 +227,14 @@ export const evaluateExam = async (req, res) => {
 
     if (allSubjectsEvaluated) {
       student.status = "evaluated";
+      if (outOfMarksStructure) {
+        student.outOfMarksStructure = outOfMarksStructure;
+      }
+      if (questionCount) {
+        student.questionCount = questionCount;
+      }
     }
+
 
     /* -------------------- 7️⃣ Exam Evaluation Status -------------------- */
     const allStudentsEvaluated = exam.students.every(
@@ -334,6 +344,54 @@ export const publishExam = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Something went wrong while publishing the exam",
+    });
+  }
+};
+export const unpublishExam = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log("unpublish exam id", id);
+
+    // 1. Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid exam ID",
+      });
+    }
+
+    // 2. Check if exam exists
+    const exam = await Exam.findById(id);
+    if (!exam) {
+      return res.status(404).json({
+        success: false,
+        message: "Exam not found",
+      });
+    }
+
+    // 3. Verify if it's already unpublished or in another state
+    if (exam.status !== "completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Exam is not published yet",
+      });
+    }
+
+    // 4. Update status back to "submitted"
+    exam.status = "submitted";
+    await exam.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Exam unpublished successfully",
+      data: exam,
+    });
+  } catch (error) {
+    console.error("Unpublish exam error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while unpublishing the exam",
     });
   }
 };

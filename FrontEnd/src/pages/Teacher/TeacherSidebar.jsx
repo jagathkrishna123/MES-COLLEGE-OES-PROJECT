@@ -5,6 +5,7 @@ import { PiExam } from 'react-icons/pi';
 import { RxDashboard } from 'react-icons/rx';
 import { FaUsers } from 'react-icons/fa';
 import { NavLink } from 'react-router-dom';
+import { GoGraph } from 'react-icons/go';
 
 const TeacherSidebar = () => {
     const menuItems = [
@@ -33,6 +34,11 @@ const TeacherSidebar = () => {
             to: '/teacher/notification',
             icon: <BiNotification size={20} />,
             label: 'Notifications'
+        },
+        {
+            to: '/teacher/analytics',
+            icon: <GoGraph size={20} />,
+            label: 'Analytics'
         }
     ];
 

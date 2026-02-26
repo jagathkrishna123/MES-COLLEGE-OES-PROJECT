@@ -59,6 +59,9 @@ const StudentResults = () => {
 
   //filter logic
   const filteredResults = groupedResults.filter((exam) => {
+    // Only show published (completed) results
+    if (exam.status !== "completed") return false;
+
     const deptMatch =
       selectedDepartment === "all" ||
       exam.department === selectedDepartment;
@@ -68,6 +71,7 @@ const StudentResults = () => {
 
     return deptMatch && yearMatch;
   });
+
   console.log(filteredResults, "resules");
 
 

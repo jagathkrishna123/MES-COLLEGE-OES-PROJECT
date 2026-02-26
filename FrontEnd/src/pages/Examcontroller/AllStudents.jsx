@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FaUsers, FaFilter, FaSearch, FaSchool, FaCalendarAlt, FaIdBadge, FaUser } from "react-icons/fa";
 import axios from "axios";
+const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
+
 const AllStudents = () => {
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
@@ -82,10 +84,7 @@ const AllStudents = () => {
     setFilteredStudents(filtered);
   };
 
-  const getUniqueYears = () => {
-    const years = [...new Set(students.map(student => student.year))].filter(Boolean);
-    return years.sort();
-  };
+
 
 
 
@@ -153,7 +152,7 @@ const AllStudents = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Academic Years</p>
-              <p className="text-2xl font-bold text-gray-900">{getUniqueYears().length}</p>
+              <p className="text-2xl font-bold text-gray-900">{YEARS.length}</p>
             </div>
           </div>
         </div>
@@ -228,7 +227,7 @@ const AllStudents = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
             >
               <option value="">All Years</option>
-              {getUniqueYears().map((year) => (
+              {YEARS.map((year) => (
                 <option key={year} value={year}>
                   {year}
                 </option>

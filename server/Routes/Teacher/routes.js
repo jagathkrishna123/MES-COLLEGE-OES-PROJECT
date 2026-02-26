@@ -7,8 +7,12 @@ import { Teachersignup, LoginTeacher } from '../../Controller/Teacher/login&sign
 import { getDepartment } from '../../Controller/Controller/Department/getDepartment.js';
 import { GetTeacher, GetAllTeachers } from "../../Controller/Teacher/GetTeacher.js"
 import { getTeacherDashboardData } from '../../Controller/Teacher/getDashBoardData.js';
+import { getTeacherAnalyticsData } from '../../Controller/Teacher/getAnalyticsData.js';
+
 
 router.get("/TeacherDashboardData", verifyToken, getTeacherDashboardData);
+router.get("/getTeacherAnalyticsData", verifyToken, getTeacherAnalyticsData);
+
 router.post('/teachersignup', Teachersignup);
 
 router.post('/loginTeacher', LoginTeacher);

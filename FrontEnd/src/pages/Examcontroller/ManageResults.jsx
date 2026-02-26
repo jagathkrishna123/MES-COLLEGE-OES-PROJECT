@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { getDynamicExams } from '../../constants/constants'
 import axios from 'axios'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import {
   FaBook,
+  FaTimes,
   FaUsers,
   FaCheckCircle,
   FaEye,
@@ -31,6 +34,7 @@ const ManageResults = () => {
   const [message, setMessage] = useState("")
   const [messageType, setMessageType] = useState("")
   const [lastExamCount, setLastExamCount] = useState(0)
+  const [selectedExam, setSelectedExam] = useState(null)
 
   console.log(exams, "exams1223");
   console.log(completedExams, "cople");
@@ -54,21 +58,26 @@ const ManageResults = () => {
 
     setExams(allExams)
 
-    // Filter exams that are submitted by teachers (ready for controller approval)
-    const submitted = allExams.filter(exam => {
+    // Filter exams that are submitted by teachers (ready for controller approval) or already completed (published)
+    const submittedOrCompleted = allExams.filter(exam => {
       const students = exam.students || []
       console.log(students, "stu");
 
       if (students.length === 0) return false
-      // Must have all students evaluated AND status should be "submitted"
-      return students.every(student => student.status === "evaluated") && exam.status === "submitted"
-    })
+      // Must have all students evaluated AND status should be "submitted" or "completed"
+      return students.every(student => student.status === "evaluated") && (exam.status === "submitted" || exam.status === "completed")
+    }).map(exam => ({
+      ...exam,
+      isPublished: exam.status === "completed"
+    }))
+
+    const pendingReview = submittedOrCompleted.filter(e => !e.isPublished)
 
     // Check if we have new submitted exams
-    if (submitted.length > lastExamCount && lastExamCount > 0) {
-      showMessage(`📬 New exam results submitted for review! (${submitted.length} total pending)`, "info")
+    if (pendingReview.length > lastExamCount && lastExamCount > 0) {
+      showMessage(`📬 New exam results submitted for review! (${pendingReview.length} total pending)`, "info")
     }
-    setLastExamCount(submitted.length)
+    setLastExamCount(pendingReview.length)
 
     // Load published status from localStorage
 
@@ -76,7 +85,7 @@ const ManageResults = () => {
     // Add published status to submitted exams
 
 
-    setCompletedExams(submitted)
+    setCompletedExams(submittedOrCompleted)
   }
 
   // Filter exams whenever search or filters change
@@ -148,7 +157,7 @@ const ManageResults = () => {
       // Update local state
       setCompletedExams((prev) =>
         prev.map((exam) =>
-          exam.id === examId
+          exam._id === examId
             ? {
               ...exam,
               status: "completed",
@@ -177,33 +186,102 @@ const ManageResults = () => {
     }
   };
 
-  const handleUnpublish = (examId) => {
-    if (window.confirm("Are you sure you want to unpublish these results? Students will no longer be able to view them.")) {
-      const publishedExams = JSON.parse(localStorage.getItem('publishedResults') || '[]')
-      const updated = publishedExams.filter(id => id !== examId)
-      localStorage.setItem('publishedResults', JSON.stringify(updated))
+  const handleUnpublish = async (examId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to unpublish these results? Students will no longer be able to view them."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await axios.put(
+        `/unpublishexam/${examId}`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
 
       // Update local state
-      setCompletedExams(prev =>
-        prev.map(exam =>
-          exam.id === examId ? { ...exam, isPublished: false } : exam
+      setCompletedExams((prev) =>
+        prev.map((exam) =>
+          exam._id === examId ? {
+            ...exam,
+            status: "submitted",
+            isPublished: false,
+          }
+            : exam
         )
-      )
+      );
 
-      showMessage("Results unpublished successfully.", "success")
+      showMessage("✅ Results unpublished successfully.", "success");
+      setRefreshKey((prev) => prev + 1);
+
+    } catch (error) {
+      console.error("Unpublish exam error:", error);
+      const message =
+        error.response?.data?.message ||
+        "Failed to unpublish results. Please try again.";
+      showMessage(message, "error");
     }
-  }
+  };
+
 
   const handleViewResults = (exam) => {
-    // Navigate to view detailed results (you can implement navigation here)
-    console.log("View results for:", exam._id)
-    showMessage(`Viewing results for ${exam.subject}...`, "success")
+    setSelectedExam(exam)
+  }
+
+  const closeModal = () => {
+    setSelectedExam(null)
   }
 
   const handleDownloadResults = (exam) => {
-    // Generate and download results (you can implement CSV/PDF generation here)
-    console.log("Download results for:", exam.id)
-    showMessage(`Downloading results for ${exam.subject}...`, "success")
+    try {
+      const doc = new jsPDF()
+
+      // Title
+      doc.setFontSize(18)
+      doc.text(`Exam Results: ${exam.subject}`, 14, 22)
+
+      // Details
+      doc.setFontSize(11)
+      doc.setTextColor(100)
+      doc.text(`Title: ${exam.title}`, 14, 30)
+      doc.text(`Department: ${exam.department} | Year: ${exam.year}`, 14, 36)
+      doc.text(`Date: ${new Date(exam.createdAt).toLocaleDateString()}`, 14, 42)
+
+      // Table
+      const tableColumn = ["Roll No", "Student Name", "Status", "Marks"]
+      const tableRows = []
+
+      const students = exam.students || []
+      students.forEach(student => {
+        const marks = student.marks !== undefined ? student.marks : (student.subjects && student.subjects[0] ? student.subjects[0].marks : "N/A");
+        const studentData = [
+          student.rollNo || "N/A",
+          student.name || "N/A",
+          student.status || "N/A",
+          marks
+        ];
+        tableRows.push(studentData);
+      });
+
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 50,
+        theme: 'grid',
+        styles: { fontSize: 10, cellPadding: 3 },
+        headStyles: { fillColor: [37, 99, 235], textColor: 255 } // Blue header
+      });
+
+      const fileName = `${exam.subject.replace(/\\s+/g, '_')}_Results.pdf`
+      doc.save(fileName)
+      showMessage(`Downloaded results for ${exam.subject}`, "success")
+    } catch (error) {
+      console.error("Error generating PDF:", error)
+      showMessage("Failed to generate PDF.", "error")
+    }
   }
 
   // Get unique departments and years for filters
@@ -213,20 +291,40 @@ const ManageResults = () => {
   // Calculate statistics
   const totalCompleted = exams.filter(exam => {
     const students = exam.students || []
-    return students.length > 0 && students.every(s => s.status === "evaluated")
+    return students.length > 0 && students.every(s => s.status === "evaluated") && (exam.status === "submitted" || exam.status === "completed")
   }).length
   const publishedCount = exams.filter(e => e.status === "completed").length
-  const unpublishedCount = exams.filter(e => e.status === "pending").length
+  const unpublishedCount = exams.filter(e => e.status === "submitted").length
   const totalStudents = exams.reduce((sum, exam) => sum + (exam.students?.length || 0), 0)
 
   // Calculate average marks for an exam
+  // const calculateAverageMarks = (exam) => {
+  //   const students = exam.students || []
+  //   const evaluatedStudents = students.filter(s => s.status === "evaluated" && s.marks !== undefined)
+  //   if (evaluatedStudents.length === 0) return 0
+  //   const sum = evaluatedStudents.reduce((acc, s) => acc + (s.marks || 0), 0)
+  //   return sum / evaluatedStudents.length
+  // }
   const calculateAverageMarks = (exam) => {
-    const students = exam.students || []
-    const evaluatedStudents = students.filter(s => s.status === "evaluated" && s.marks !== undefined)
-    if (evaluatedStudents.length === 0) return 0
-    const sum = evaluatedStudents.reduce((acc, s) => acc + (s.marks || 0), 0)
-    return sum / evaluatedStudents.length
-  }
+    const students = exam.students || [];
+
+    const evaluatedStudents = students.filter(
+      (s) => s.status === "evaluated"
+    );
+
+    if (evaluatedStudents.length === 0) return 0;
+
+    const sum = evaluatedStudents.reduce((acc, s) => {
+      const marks =
+        s.marks !== undefined
+          ? s.marks
+          : s.subjects?.[0]?.marks ?? 0;
+
+      return acc + Number(marks);
+    }, 0);
+
+    return sum / evaluatedStudents.length;
+  };
 
   return (
     <div key={refreshKey} className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4 font-out">
@@ -503,6 +601,104 @@ const ManageResults = () => {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {/* Results Modal */}
+        {selectedExam && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">{selectedExam.subject} Results</h2>
+                  <p className="text-gray-500 mt-1 font-medium">{selectedExam.department} • {selectedExam.year}</p>
+                </div>
+                <button
+                  onClick={closeModal}
+                  className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200"
+                >
+                  <FaTimes size={22} />
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
+                <div className="mb-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col">
+                    <p className="text-sm text-gray-500 font-medium mb-1">Total Students</p>
+                    <p className="text-2xl font-bold text-gray-900">{selectedExam.students?.length || 0}</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-xl border border-green-100 shadow-sm flex flex-col">
+                    <p className="text-sm text-green-600 font-medium mb-1">Evaluated</p>
+                    <p className="text-2xl font-bold text-green-700">
+                      {(selectedExam.students || []).filter(s => s.status === "evaluated").length}
+                    </p>
+                  </div>
+                  <div className="bg-white p-5 rounded-xl border border-blue-100 shadow-sm flex flex-col">
+                    <p className="text-sm text-blue-600 font-medium mb-1">Average Marks</p>
+                    <p className="text-2xl font-bold text-blue-700">{calculateAverageMarks(selectedExam).toFixed(1)}</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-xl border border-orange-100 shadow-sm flex flex-col">
+                    <p className="text-sm text-orange-600 font-medium mb-1">Status</p>
+                    <p className="text-2xl font-bold text-orange-700 capitalize">{selectedExam.isPublished ? 'Published' : 'Unpublished'}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50/80 text-gray-700 border-b border-gray-200">
+                          <th className="px-5 py-4 font-semibold text-sm">Roll No</th>
+                          <th className="px-5 py-4 font-semibold text-sm">Name</th>
+                          <th className="px-5 py-4 font-semibold text-sm">Status</th>
+                          <th className="px-5 py-4 font-semibold text-sm">Marks</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {(selectedExam.students || []).map((student, idx) => {
+                          const marks = student.marks !== undefined ? student.marks : (student.subjects && student.subjects[0] ? student.subjects[0].marks : "-");
+                          return (
+                            <tr key={idx} className="hover:bg-blue-50/50 transition-colors">
+                              <td className="px-5 py-3.5 text-sm text-gray-600 font-medium">{student.rollNo || "N/A"}</td>
+                              <td className="px-5 py-3.5 text-sm font-semibold text-gray-900">{student.name || "N/A"}</td>
+                              <td className="px-5 py-3.5 text-sm">
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${student.status === 'evaluated' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                  {student.status === 'evaluated' ? 'Evaluated' : 'Pending'}
+                                </span>
+                              </td>
+                              <td className="px-5 py-3.5 text-sm font-bold text-gray-900">
+                                {marks}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {(selectedExam.students || []).length === 0 && (
+                    <div className="p-10 text-center flex flex-col items-center justify-center">
+                      <FaUsers className="text-gray-300 text-4xl mb-3" />
+                      <p className="text-gray-500 font-medium">No students found for this exam.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="p-5 border-t border-gray-100 bg-white flex justify-end gap-3 z-10 shrink-0">
+                <button
+                  onClick={closeModal}
+                  className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors font-semibold shadow-sm"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => handleDownloadResults(selectedExam)}
+                  className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 font-semibold shadow-sm shadow-blue-600/20"
+                >
+                  <FaDownload size={14} />
+                  Download PDF
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { BiNotification } from 'react-icons/bi';
 import { CgAdd, CgNotes } from 'react-icons/cg';
-import { GoReport } from 'react-icons/go';
+import { GoGraph, GoReport } from 'react-icons/go';
 import { MdOutlineManageAccounts, MdOutlineSpaceDashboard } from 'react-icons/md';
 import { PiExam } from 'react-icons/pi';
 import { NavLink } from 'react-router-dom';
@@ -43,6 +43,11 @@ const ControllerSidebar = () => {
             to: '/controller/allstudents',
             icon: <GoReport size={20} />,
             label: 'All Students'
+        },
+        {
+            to: '/controller/analytics',
+            icon: <GoGraph size={20} />,
+            label: 'Analytics'
         }
     ];
 

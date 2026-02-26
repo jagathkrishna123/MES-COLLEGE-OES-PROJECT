@@ -20,7 +20,7 @@ const StudentSchema = new mongoose.Schema(
       trim: true,
     },
 
-status: {
+    status: {
       type: String,
       enum: ["pending", "evaluated"],
       default: "pending",
@@ -34,9 +34,6 @@ status: {
     // ✅ NEW FIELD
     subjects: [
       {
-
-
-
         subjectName: {
           type: String,
           required: true,
@@ -44,21 +41,27 @@ status: {
         },
         marks: {
           type: Number,
-
           min: 0,
         },
-
         grade: {
           type: String,
           trim: true,
         },
-
         comments: {
           type: String,
         }
-
       },
     ],
+    outOfMarksStructure: {
+      type: Map,
+      of: Number,
+      default: {},
+    },
+    questionCount: {
+      type: Number,
+      default: 10,
+    },
+
   },
   {
     _id: false,
@@ -93,7 +96,7 @@ const ExamSchema = new mongoose.Schema(
     // 🔥 NEW FIELD
     status: {
       type: String,
-      enum: ["pending", "evaluated", "submitted" ,"completed" , "evaluating"],
+      enum: ["pending", "evaluated", "submitted", "completed", "evaluating"],
       default: "pending",
       required: true,
     },

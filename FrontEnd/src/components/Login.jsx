@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import MESLOGO from "../assets/MES_logop.png"
 
 const Login = () => {
   const navigate = useNavigate();
@@ -287,8 +288,18 @@ const Login = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-out">
-      <div className="max-w-md w-full space-y-8">
+    <div className="relative min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-out">
+      <div
+  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+  style={{
+    backgroundImage: `url(${MESLOGO})`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
+    backgroundSize: "500px",
+    opacity: 0.08,
+  }}
+></div>
+      <div className="relative z-10 max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Welcome to OES
@@ -589,13 +600,10 @@ const Login = () => {
           <form className="mt-8 space-y-6" onSubmit={handleAdminLogin}>
             <div className="bg-white py-8 px-6 shadow-lg rounded-lg space-y-4">
               <h3 className="text-lg font-medium text-gray-900 text-center">Controller Login</h3>
-              <p className="text-xs text-gray-500 text-center">
-                Use credentials: admin@oes.com / admin123
-              </p>
 
               <div>
                 <label htmlFor="admin-email" className="block text-sm font-medium text-gray-700">
-                  Admin Email
+                  Controller Email
                 </label>
                 <input
                   id="admin-email"
@@ -605,7 +613,7 @@ const Login = () => {
                   value={adminLogin.email}
                   onChange={handleAdminLoginChange}
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-red-500 focus:border-red-500"
-                  placeholder="admin@oes.com"
+                  placeholder="abc@gmail.com"
                 />
               </div>
 
@@ -629,7 +637,7 @@ const Login = () => {
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all"
               >
-                Admin Login
+                Controller Login
               </button>
             </div>
           </form>

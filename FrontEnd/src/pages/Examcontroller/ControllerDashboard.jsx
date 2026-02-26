@@ -6,6 +6,7 @@ import { BsArrowUp, BsArrowDown } from "react-icons/bs";
 import { useEffect, useState } from "react";
 
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 const ControllerDashboard = () => {
   const [dashboardData, setDashboardData] = useState({
     totalTeachers: 0,
@@ -17,6 +18,8 @@ const ControllerDashboard = () => {
   });
 
   const [activities, setActivities] = useState([]);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -122,36 +125,36 @@ const ControllerDashboard = () => {
 
 
 
-  const quickActions = [
-    {
-      title: "Create Exam",
-      description: "Set up new examination",
-      icon: <FaBook className="text-blue-600" />,
-      bgColor: "bg-blue-50",
-      action: "create-exam"
-    },
-    {
-      title: "Manage Teachers",
-      description: "Add or remove teachers",
-      icon: <GiTeacher className="text-green-600" />,
-      bgColor: "bg-green-50",
-      action: "manage-teachers"
-    },
-    {
-      title: "Add Department",
-      description: "Create new department",
-      icon: <FaSchool className="text-purple-600" />,
-      bgColor: "bg-purple-50",
-      action: "add-department"
-    },
-    {
-      title: "View Reports",
-      description: "Check performance reports",
-      icon: <FaChartLine className="text-orange-600" />,
-      bgColor: "bg-orange-50",
-      action: "view-reports"
-    },
-  ];
+const quickActions = [
+  {
+    title: "Create Exam",
+    description: "Set up new examination",
+    icon: <FaBook className="text-blue-600" />,
+    bgColor: "bg-blue-50",
+    route: "/controller/create-exam"
+  },
+  {
+    title: "Manage Teachers",
+    description: "Add or remove teachers",
+    icon: <GiTeacher className="text-green-600" />,
+    bgColor: "bg-green-50",
+    route: "/controller/manage-teacher"
+  },
+  {
+    title: "Add Department",
+    description: "Create new department",
+    icon: <FaSchool className="text-purple-600" />,
+    bgColor: "bg-purple-50",
+    route: "/controller/add-department"
+  },
+  {
+    title: "View Reports",
+    description: "Check performance reports",
+    icon: <FaChartLine className="text-orange-600" />,
+    bgColor: "bg-orange-50",
+    route: "/controller/resultsmanage-"
+  },
+];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6 font-out">
@@ -224,6 +227,7 @@ const ControllerDashboard = () => {
               {quickActions.map((action, index) => (
                 <button
                   key={index}
+                  onClick={() => navigate(action.route)}
                   className={`w-full p-4 ${action.bgColor} border border-gray-200 rounded-lg hover:shadow-md transition-all duration-300 text-left group`}
                 >
                   <div className="flex items-center gap-3">
@@ -284,39 +288,6 @@ const ControllerDashboard = () => {
         </div>
       </div>
 
-      {/* System Status */}
-      <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-          <FaChartLine className="text-blue-600" />
-          System Overview
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-              <FaCheckCircle className="text-white" size={24} />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-1">System Status</h3>
-            <p className="text-sm text-green-600 font-medium">All Systems Operational</p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
-              <FaUsers className="text-white" size={24} />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Active Users</h3>
-            <p className="text-sm text-gray-600">258 users online</p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
-              <FaClipboardCheck className="text-white" size={24} />
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Today's Exams</h3>
-            <p className="text-sm text-gray-600">12 exams scheduled</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

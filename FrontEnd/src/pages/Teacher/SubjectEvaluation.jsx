@@ -253,27 +253,6 @@ const SubjectEvaluation = () => {
             </div>
           )}
         </div>
-
-        {/* Exam Files Section */}
-        <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Exam Files</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <FaFileAlt className="text-blue-600" size={20} />
-              <div>
-                <p className="font-medium text-gray-900">Question Paper</p>
-                <p className="text-sm text-gray-600">{exam.questionPaper}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
-              <FaBook className="text-green-600" size={20} />
-              <div>
-                <p className="font-medium text-gray-900">Answer Key</p>
-                <p className="text-sm text-gray-600">{exam.answerKey}</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaTrash, FaSchool, FaCalendarAlt, FaBook, FaSave, FaEdit, FaRedo, FaEraser } from "react-icons/fa";
-import axios from 'axios'
+import { FaPlus, FaTrash, FaSchool, FaCalendarAlt, FaBook, FaSave, FaSync } from "react-icons/fa";
+import axios from 'axios';
+
 const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
 
 const AddDepartment = () => {
   const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
@@ -13,70 +15,28 @@ const AddDepartment = () => {
   const [subjectInput, setSubjectInput] = useState("");
   const [subjects, setSubjects] = useState([]);
 
-
-
-  // Load departments from localStorage on component mount
+  // Fetch departments from backend on component mount
   useEffect(() => {
-    const loadDepartments = () => {
-      try {
-        const savedDepartments = localStorage.getItem("departments");
-        if (savedDepartments && savedDepartments !== "undefined" && savedDepartments !== "null") {
-          const parsedDepartments = JSON.parse(savedDepartments);
-          if (Array.isArray(parsedDepartments) && parsedDepartments.length > 0) {
-            setDepartments(parsedDepartments);
-            console.log("✅ Loaded departments from localStorage:", parsedDepartments.length, "departments");
-            return true;
-          } else if (Array.isArray(parsedDepartments) && parsedDepartments.length === 0) {
-            console.log("ℹ️ Empty departments array found in localStorage");
-            setDepartments([]);
-            return true;
-          } else {
-            console.warn("⚠️ Invalid departments data in localStorage, resetting to empty array");
-            localStorage.removeItem("departments"); // Clean up invalid data
-            setDepartments([]);
-            return false;
-          }
-        } else {
-          console.log("ℹ️ No departments found in localStorage, starting with empty array");
-          setDepartments([]);
-          return false;
-        }
-
-      } catch (error) {
-        console.error("❌ Error loading departments from localStorage:", error);
-        localStorage.removeItem("departments"); // Clean up corrupted data
-        setDepartments([]);
-        return false;
-      }
-    };
-
-    loadDepartments();
+    fetchDepartments();
   }, []);
 
-  // Save departments to localStorage whenever departments change (but not on initial load)
-  useEffect(() => {
-    // Skip saving on initial render when departments is empty array
-    if (departments.length === 0) {
-      // Check if there's existing data in localStorage before overwriting
-      const existingData = localStorage.getItem("departments");
-      if (!existingData) {
-        try {
-          localStorage.setItem("departments", JSON.stringify(departments));
-          console.log("💾 Initialized empty departments array in localStorage");
-        } catch (error) {
-          console.error("❌ Error initializing departments in localStorage:", error);
-        }
-      }
-      return;
-    }
-
+  const fetchDepartments = async () => {
+    setLoading(true);
     try {
-      localStorage.setItem("departments", JSON.stringify(departments));
-      console.log("💾 Saved departments to localStorage:", departments.length, "departments");
+      const response = await axios.get('/getDepartment', {
+        withCredentials: true
+      });
+      if (response.data && response.data.departments) {
+        setDepartments(response.data.departments);
+        console.log("✅ Fetched departments from backend:", response.data.departments.length);
+      }
     } catch (error) {
-      console.error("❌ Error saving departments to localStorage:", error);
+      console.error("❌ Error fetching departments:", error);
+      showMessage("❌ Failed to load departments from database", "error");
+    } finally {
+      setLoading(false);
     }
-  }, [departments]);
+  };
 
   const showMessage = (text, type = "success") => {
     setMessage(text);
@@ -87,49 +47,6 @@ const AddDepartment = () => {
     }, 4000);
   };
 
-  // Function to reload departments from localStorage
-  const reloadDepartments = () => {
-    try {
-      const savedDepartments = localStorage.getItem("departments");
-      if (savedDepartments && savedDepartments !== "undefined" && savedDepartments !== "null") {
-        const parsedDepartments = JSON.parse(savedDepartments);
-        if (Array.isArray(parsedDepartments)) {
-          setDepartments(parsedDepartments);
-          showMessage(`✅ Reloaded ${parsedDepartments.length} departments from storage`, "success");
-          console.log("🔄 Manually reloaded departments:", parsedDepartments.length);
-        } else {
-          setDepartments([]);
-          showMessage("⚠️ No valid departments found in storage", "warning");
-        }
-      } else {
-        setDepartments([]);
-        showMessage("ℹ️ No departments found in storage", "info");
-      }
-    } catch (error) {
-      console.error("❌ Error reloading departments:", error);
-      showMessage("❌ Failed to reload departments", "error");
-      setDepartments([]);
-    }
-  };
-
-  // Function to clear all departments (for debugging/testing)
-  const clearAllDepartments = () => {
-    if (window.confirm("Are you sure you want to clear all departments? This action cannot be undone.")) {
-      try {
-        localStorage.removeItem("departments");
-        setDepartments([]);
-        showMessage("🗑️ All departments cleared from storage", "warning");
-        console.log("🗑️ Cleared all departments from localStorage");
-      } catch (error) {
-        console.error("❌ Error clearing departments:", error);
-        showMessage("❌ Failed to clear departments", "error");
-      }
-    }
-  };
-
-  /* =========================
-     ADD SUBJECT
-     ========================= */
   const addSubject = () => {
     if (!subjectInput.trim()) {
       showMessage("❌ Please enter a subject name.", "error");
@@ -146,81 +63,70 @@ const AddDepartment = () => {
     showMessage(`✅ Subject "${subjectInput.trim()}" added!`, "success");
   };
 
-  /* =========================
-     CREATE / UPDATE DEPARTMENT
-     ========================= */
+  const removeSubject = (index) => {
+    setSubjects(subjects.filter((_, i) => i !== index));
+  };
+
   const createDepartment = async () => {
     if (!departmentName.trim() || !year || subjects.length === 0) {
       showMessage(
         "❌ Please fill in department name, select a year, and add at least one subject.",
         "error"
-      )
-      return
+      );
+      return;
     }
-
 
     try {
       const payload = {
         name: departmentName.trim(),
         year,
         subjects
-      }
+      };
 
-      // Send to backend
       const response = await axios.post(
-        '/createDepartment', // your API endpoint
+        '/createDepartment',
         payload,
         {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          withCredentials: true // 🔐 send HTTP-only cookie
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true
         }
-      )
- 
+      );
 
-
-      const updatedDepartment = response.data.department // backend returns created/updated department
-   
-
-      // Optional: update local state
-      setDepartments((prev) => {
-        const deptIndex = prev.findIndex(
-          (d) => d._id === updatedDepartment._id
-        )
-
-        if (deptIndex === -1) {
-          return [...prev, updatedDepartment]
-        } else {
-          const copy = [...prev]
-          copy[deptIndex] = updatedDepartment
-          return copy
-        }
-      })
-
-      showMessage("✅ Department created/updated successfully!", "success")
+      showMessage("✅ Department created successfully!", "success");
 
       // Reset form
-      setYear("")
-      setSubjects([])
-      setSubjectInput("")
-      setDepartmentName("")
+      setYear("");
+      setSubjects([]);
+      setSubjectInput("");
+      setDepartmentName("");
 
+      // Refresh list
+      fetchDepartments();
     } catch (error) {
-      console.error("Error creating department:", error)
+      console.error("Error creating department:", error);
       showMessage(
         error.response?.data?.message || "❌ Failed to create department. Try again.",
         "error"
-      )
-    } finally {
-
+      );
     }
-  }
-  /* =========================
-     REMOVE SUBJECT
-     ========================= */
-  const removeSubject = (index) => {
-    setSubjects(subjects.filter((_, i) => i !== index));
+  };
+
+  const handleDeleteDepartment = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this department entry?")) return;
+
+    try {
+      await axios.delete(`/deleteDepartment/${id}`, {
+        withCredentials: true
+      });
+      showMessage("🗑️ Department deleted successfully", "success");
+      fetchDepartments();
+    } catch (error) {
+      console.error("Error deleting department:", error);
+      showMessage(
+        error.response?.data?.message || "❌ Failed to delete department.",
+        "error"
+      );
+    }
   };
 
   return (
@@ -237,34 +143,21 @@ const AddDepartment = () => {
               Create and manage academic departments with their respective subjects and years.
             </p>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={reloadDepartments}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all duration-300 font-medium"
-              title="Reload departments from storage"
-            >
-              <FaRedo size={16} />
-              Reload Data
-            </button>
-            <button
-              onClick={clearAllDepartments}
-              className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all duration-300 font-medium"
-              title="Clear all departments from storage"
-            >
-              <FaEraser size={16} />
-              Clear All
-            </button>
-          </div>
+          <button
+            onClick={fetchDepartments}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all duration-300 font-medium"
+          >
+            <FaSync className={loading ? "animate-spin" : ""} />
+            Refresh List
+          </button>
         </div>
       </div>
 
       {/* Status Message */}
       {message && (
-        <div className={`mb-6 p-4 rounded-lg text-center font-medium ${messageType === "success"
-          ? "bg-green-100 text-green-700 border border-green-300"
-          : messageType === "error"
-            ? "bg-red-100 text-red-700 border border-red-300"
-            : "bg-yellow-100 text-yellow-700 border border-yellow-300"
+        <div className={`mb-6 p-4 rounded-lg text-center font-medium ${messageType === "success" ? "bg-green-100 text-green-700 border border-green-300" :
+          messageType === "error" ? "bg-red-100 text-red-700 border border-red-300" :
+            "bg-yellow-100 text-yellow-700 border border-yellow-300"
           }`}>
           {message}
         </div>
@@ -279,7 +172,6 @@ const AddDepartment = () => {
           </h2>
 
           <div className="space-y-6">
-            {/* Department Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                 <FaSchool className="text-blue-500" />
@@ -294,7 +186,6 @@ const AddDepartment = () => {
               />
             </div>
 
-            {/* Academic Year */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                 <FaCalendarAlt className="text-purple-500" />
@@ -307,14 +198,11 @@ const AddDepartment = () => {
               >
                 <option value="">Select Year</option>
                 {YEARS.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
+                  <option key={y} value={y}>{y}</option>
                 ))}
               </select>
             </div>
 
-            {/* Add Subject */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                 <FaBook className="text-green-500" />
@@ -332,7 +220,7 @@ const AddDepartment = () => {
                 <button
                   type="button"
                   onClick={addSubject}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-all duration-300 font-medium"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 font-medium"
                 >
                   <FaPlus className="inline mr-2" />
                   Add
@@ -340,21 +228,14 @@ const AddDepartment = () => {
               </div>
             </div>
 
-            {/* Subjects List */}
             {subjects.length > 0 && (
               <div>
                 <p className="text-sm font-medium text-gray-700 mb-3">Subjects Added ({subjects.length})</p>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {subjects.map((subject, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between bg-gray-50 px-4 py-2 rounded-lg"
-                    >
+                    <div key={index} className="flex items-center justify-between bg-gray-50 px-4 py-2 rounded-lg">
                       <span className="text-gray-700 font-medium">{subject}</span>
-                      <button
-                        onClick={() => removeSubject(index)}
-                        className="text-red-500 hover:text-red-700 transition-colors p-1"
-                      >
+                      <button onClick={() => removeSubject(index)} className="text-red-500 hover:text-red-700 transition-colors p-1">
                         <FaTrash size={14} />
                       </button>
                     </div>
@@ -363,10 +244,9 @@ const AddDepartment = () => {
               </div>
             )}
 
-            {/* Save Button */}
             <button
               onClick={createDepartment}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 transition-all duration-300 font-medium"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-300 font-medium"
             >
               <FaSave />
               Save Department & Subjects
@@ -379,54 +259,76 @@ const AddDepartment = () => {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
               <FaSchool className="text-blue-600" />
-              Created Departments ({departments.length})
+              Departments ({departments.length})
             </h2>
-            <div className="text-sm text-gray-500 flex items-center gap-2">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              Auto-saved to localStorage
-            </div>
           </div>
 
-          {departments.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading departments...</p>
+            </div>
+          ) : departments.length === 0 ? (
             <div className="text-center py-12">
               <FaSchool className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Departments Created</h3>
-              <p className="text-gray-600">
-                Start by creating your first department with subjects and academic years.
-              </p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Departments Found</h3>
+              <p className="text-gray-600">Start by creating your first department.</p>
             </div>
           ) : (
-            <div className="space-y-4 max-h-[600px] overflow-y-auto">
-              {departments.map((dept) => (
-                <div
-                  key={dept._id}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-300"
-                >
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <FaSchool className="text-blue-500" />
-                    {dept.departmentName}
+            <div className="space-y-8 max-h-[800px] overflow-y-auto pr-2">
+              {Object.entries(
+                departments.reduce((acc, dept) => {
+                  if (!acc[dept.departmentName]) acc[dept.departmentName] = [];
+                  acc[dept.departmentName].push(dept);
+                  return acc;
+                }, {})
+              ).map(([name, entries]) => (
+                <div key={name} className="border border-gray-200 rounded-xl p-5 bg-gray-50/30">
+                  <h3 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-200 pb-2">
+                    <FaSchool className="text-blue-600" />
+                    {name}
                   </h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    {entries.map((dept) => (
+                      <div
+                        key={dept._id}
+                        className="group bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-300 relative"
+                      >
+                        <button
+                          onClick={() => handleDeleteDepartment(dept._id)}
+                          className="absolute top-4 right-4 text-red-400 hover:text-red-600 p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Delete Entry"
+                        >
+                          <FaTrash size={14} />
+                        </button>
 
-                  <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FaCalendarAlt className="text-purple-500" />
-                      <span className="font-medium text-gray-700">{dept.year}</span>
-                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
-                        1 subject
-                      </span>
-                    </div>
-                    <div className="ml-6 space-y-1">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <FaBook className="text-green-500 text-xs" />
-                        {dept.subjects}
+                        <div className="flex items-center gap-2 mb-3">
+                          <FaCalendarAlt className="text-purple-500" />
+                          <span className="font-bold text-gray-800">{dept.year}</span>
+                        </div>
+
+                        <div className="ml-6 space-y-1">
+                          {Array.isArray(dept.subjects) ? (
+                            dept.subjects.map((sub, idx) => (
+                              <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                                <FaBook className="text-green-500 text-xs" />
+                                {sub}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <FaBook className="text-green-500 text-xs" />
+                              {dept.subjects}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           )}
-
         </div>
       </div>
     </div>

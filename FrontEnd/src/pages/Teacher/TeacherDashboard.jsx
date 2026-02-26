@@ -230,14 +230,14 @@ const TeacherDashboard = () => {
       bgColor: "bg-orange-50",
       iconColor: "text-orange-600"
     },
-    {
-      icon: FaCalendarCheck,
-      title: "Attendance",
-      value: dashboardData.attendance,
-      color: "from-cyan-500 to-cyan-600",
-      bgColor: "bg-cyan-50",
-      iconColor: "text-cyan-600"
-    },
+    // {
+    //   icon: FaCalendarCheck,
+    //   title: "Attendance",
+    //   value: dashboardData.attendance,
+    //   color: "from-cyan-500 to-cyan-600",
+    //   bgColor: "bg-cyan-50",
+    //   iconColor: "text-cyan-600"
+    // },
     {
       icon: FaBell,
       title: "Notifications",

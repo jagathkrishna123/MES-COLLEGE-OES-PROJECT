@@ -16,9 +16,11 @@ export const getNotification = async (req, res) => {
 
     if (role === "teacher") {
       notifications = await Notification.find({ teacherIds: id })
+        .populate("teacherIds", "name")
         .sort({ createdAt: -1 });
     } else {
       notifications = await Notification.find()
+        .populate("teacherIds", "name")
         .sort({ createdAt: -1 });
     }
 
@@ -83,8 +85,8 @@ export const updateNotification = async (req, res) => {
 export const updateAllNotification = async (req, res) => {
   try {
     const { id, role } = req.user;
-    console.log(id,"id updateAll notification");
-    
+    console.log(id, "id updateAll notification");
+
 
     if (role !== "teacher" && role !== "controller") {
       return res.status(403).json({
@@ -105,7 +107,7 @@ export const updateAllNotification = async (req, res) => {
       success: true,
       message: "All notifications marked as read",
       updatedCount: result.modifiedCount,
-      
+
     });
 
   } catch (error) {
