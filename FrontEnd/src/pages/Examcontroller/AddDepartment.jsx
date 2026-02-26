@@ -27,7 +27,8 @@ const AddDepartment = () => {
         withCredentials: true
       });
       if (response.data && response.data.departments) {
-        setDepartments(response.data.departments);
+        // setDepartments(response.data.departments);
+        setDepartments([...response.data.departments].reverse());
         console.log("✅ Fetched departments from backend:", response.data.departments.length);
       }
     } catch (error) {
