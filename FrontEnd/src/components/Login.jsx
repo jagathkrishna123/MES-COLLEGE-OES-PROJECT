@@ -2376,7 +2376,7 @@ const Login = () => {
           </h1>
           
           <p className="text-xl text-blue-100 text-center max-w-md mb-8">
-            Online Examination System
+            Online Evaluation System
           </p>
 
           <div className="w-24 h-1 bg-white/50 rounded-full mb-8"></div>
