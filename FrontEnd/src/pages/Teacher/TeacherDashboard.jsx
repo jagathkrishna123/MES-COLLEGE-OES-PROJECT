@@ -116,7 +116,9 @@ import {
   FaGraduationCap,
   FaTachometerAlt
 } from 'react-icons/fa'
+import {BsGraphUpArrow} from 'react-icons/bs'
 import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
 
 const TeacherDashboard = () => {
 
@@ -129,6 +131,8 @@ const TeacherDashboard = () => {
     attendance: 0,
 
   })
+
+  const navigate = useNavigate()
 
   const [notifications, setNotifications] = useState([])
 
@@ -337,22 +341,22 @@ const TeacherDashboard = () => {
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="text-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+          <div onClick={() => navigate("managestudents")} className="text-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
             <FaUsers className="text-blue-600 text-2xl mx-auto mb-2" />
             <p className="text-sm font-medium text-gray-900">Manage Students</p>
             <p className="text-xs text-gray-600">Add, edit, view students</p>
           </div>
-          <div className="text-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+          <div onClick={() => navigate("evaluate")} className="text-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
             <FaCheckCircle className="text-green-600 text-2xl mx-auto mb-2" />
             <p className="text-sm font-medium text-gray-900">Evaluate Papers</p>
             <p className="text-xs text-gray-600">Grade student papers</p>
           </div>
-          <div className="text-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-            <FaCalendarCheck className="text-purple-600 text-2xl mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-900">Mark Attendance</p>
-            <p className="text-xs text-gray-600">Record student attendance</p>
+          <div onClick={() => navigate("analytics")} className="text-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+            <BsGraphUpArrow className="text-purple-600 text-2xl mx-auto mb-2" />
+            <p className="text-sm font-medium text-gray-900">Analytics</p>
+            <p className="text-xs text-gray-600">Track trends and statistics</p>
           </div>
-          <div className="text-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+          <div onClick={() => navigate("notification")} className="text-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
             <FaBell className="text-orange-600 text-2xl mx-auto mb-2" />
             <p className="text-sm font-medium text-gray-900">Notifications</p>
             <p className="text-xs text-gray-600">View messages</p>

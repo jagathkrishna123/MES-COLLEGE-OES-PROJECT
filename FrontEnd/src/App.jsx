@@ -27,7 +27,7 @@ import Analytics from "./pages/Examcontroller/Analytics";
 import TeacherAnalytics from "./pages/Teacher/TeacherAnalytics";
 const App = () => {
   const { pathname } = useLocation();
-  const hideLayout = pathname.includes("admin") || pathname.includes("teacher") || pathname.includes("controller");
+  const hideLayout = pathname.includes("admin") || pathname.includes("teacher") || pathname.includes("controller") || pathname.includes("login");
   // useEffect(() => {
   //   localStorage.clear();   // 🔥 clears whole project data
   // }, []);
