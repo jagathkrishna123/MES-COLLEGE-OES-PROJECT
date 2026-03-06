@@ -14,6 +14,7 @@ import { getNotification, updateNotification, updateAllNotification } from '../.
 import { updateTeacherStatus, deleteTeacher } from '../../Controller/Controller/Update&DeleteTeachers/update&delete.js';
 import { getControllerDashboardData } from '../../Controller/Controller/Department/getControllerDashboardData.js';
 import { getAnalyticsData } from '../../Controller/Controller/Department/getAnalyticsData.js';
+import { getAllSharedFiles } from '../../Controller/SharedFile/SharedFileController.js';
 
 // Dashboard Route
 router.get("/getDashboardData", verifyToken, getControllerDashboardData);
@@ -55,6 +56,7 @@ router.put("/publishexam/:id", verifyToken, publishExam)
 router.put("/unpublishexam/:id", verifyToken, unpublishExam)
 
 //Updae & Delete Teachers
+router.get("/getSharedFiles", verifyToken, getAllSharedFiles);
 router.put("/updateTeacherStatus/:id", verifyToken, updateTeacherStatus);
 router.delete("/deleteTeacher/:id", verifyToken, deleteTeacher);
 

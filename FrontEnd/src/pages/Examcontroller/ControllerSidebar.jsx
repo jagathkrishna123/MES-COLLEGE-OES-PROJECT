@@ -5,6 +5,8 @@ import { GoGraph, GoReport } from 'react-icons/go';
 import { MdOutlineManageAccounts, MdOutlineSpaceDashboard } from 'react-icons/md';
 import { PiExam } from 'react-icons/pi';
 import { NavLink } from 'react-router-dom';
+import { TbShare3 } from "react-icons/tb";
+
 
 const ControllerSidebar = () => {
     const menuItems = [
@@ -48,6 +50,11 @@ const ControllerSidebar = () => {
             to: '/controller/analytics',
             icon: <GoGraph size={20} />,
             label: 'Analytics'
+        },
+        {
+            to: '/controller/sharedfiles',
+            icon: <TbShare3 size={20} />,
+            label: 'Shared Files'
         }
     ];
 

@@ -6,6 +6,8 @@ import { RxDashboard } from 'react-icons/rx';
 import { FaUsers } from 'react-icons/fa';
 import { NavLink } from 'react-router-dom';
 import { GoGraph } from 'react-icons/go';
+import { TbShare3 } from "react-icons/tb";
+
 
 const TeacherSidebar = () => {
     const menuItems = [
@@ -39,6 +41,11 @@ const TeacherSidebar = () => {
             to: '/teacher/analytics',
             icon: <GoGraph size={20} />,
             label: 'Analytics'
+        },
+        {
+            to: '/teacher/sharefile',
+            icon: <TbShare3 size={20} />,
+            label: 'Share File'
         }
     ];
 

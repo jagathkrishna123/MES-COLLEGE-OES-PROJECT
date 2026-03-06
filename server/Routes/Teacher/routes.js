@@ -8,6 +8,8 @@ import { getDepartment } from '../../Controller/Controller/Department/getDepartm
 import { GetTeacher, GetAllTeachers } from "../../Controller/Teacher/GetTeacher.js"
 import { getTeacherDashboardData } from '../../Controller/Teacher/getDashBoardData.js';
 import { getTeacherAnalyticsData } from '../../Controller/Teacher/getAnalyticsData.js';
+import { uploadSharedFile } from '../../Controller/SharedFile/SharedFileController.js';
+import { addFilesMiddleware } from '../../Middleware/exammulter.js';
 
 
 router.get("/TeacherDashboardData", verifyToken, getTeacherDashboardData);
@@ -27,5 +29,14 @@ router.delete('/deleteStudent/:id', verifyToken, deleteStudent)
 
 router.get("/getTeacherDepartment", getDepartment)
 router.get("/getTeacherDepartment", getDepartment)
+
+router.post(
+    "/shareFile",
+    verifyToken,
+    addFilesMiddleware([
+        { name: "sharedFile", maxCount: 1 },
+    ]),
+    uploadSharedFile
+);
 
 export default router

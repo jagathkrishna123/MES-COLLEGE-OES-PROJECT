@@ -25,6 +25,8 @@ import AllStudents from "./pages/Examcontroller/AllStudents";
 import StudentResults from "./components/StudentResults";
 import Analytics from "./pages/Examcontroller/Analytics";
 import TeacherAnalytics from "./pages/Teacher/TeacherAnalytics";
+import ShareFile from "./pages/Teacher/ShareFile";
+import SharedFiles from "./pages/Examcontroller/SharedFiles";
 const App = () => {
   const { pathname } = useLocation();
   const hideLayout = pathname.includes("admin") || pathname.includes("teacher") || pathname.includes("controller") || pathname.includes("login");
@@ -60,6 +62,7 @@ const App = () => {
           {/* per-student */}
           <Route path="notification" element={<Notification />} />
           <Route path="analytics" element={<TeacherAnalytics />} />
+          <Route path="sharefile" element={<ShareFile/>} />
         </Route>
 
         <Route path="/controller" element={<ControllerLayout />}>
@@ -74,6 +77,7 @@ const App = () => {
           <Route path="resultsmanage-" element={<ManageResults />} />
           <Route path="allstudents" element={<AllStudents />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="sharedfiles" element={<SharedFiles/>} />
         </Route>
       </Routes>
 

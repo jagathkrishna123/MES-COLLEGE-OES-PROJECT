@@ -861,8 +861,10 @@ import { getDynamicExams, updateExam } from "../../constants/constants";
 import { FaFileAlt, FaKey, FaArrowLeft, FaSave, FaEye, FaTimes, FaExpand, FaCompress, FaCheckCircle } from "react-icons/fa";
 import { base64ToBlobUrl, revokeBlobUrls } from "../../utils/fileUtils";
 import axios from "axios";
+import { useEvaluation } from "../../context/EvaluationContext";
 const StudentEvaluation = () => {
   const { subjectId, studentId } = useParams();
+  const { lastSchemes, updateScheme } = useEvaluation();
 
 
   const navigate = useNavigate();
@@ -878,24 +880,11 @@ const StudentEvaluation = () => {
   const [examData, setExamData] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // const [questionCount, setQuestionCount] = useState(10);
   const [questionCount, setQuestionCount] = useState(() => {
     const studentCount = location.state?.studentData?.questionCount;
-    const lastUsedCount = localStorage.getItem("lastQuestionCount");
-    return studentCount || (lastUsedCount ? parseInt(lastUsedCount) : 10);
+    return studentCount || lastSchemes[subjectId]?.questionCount || 10;
   });
 
-  // Persist questionCount preference
-  useEffect(() => {
-    localStorage.setItem("lastQuestionCount", questionCount);
-  }, [questionCount]);
-
-  // Persist outOfMarks structure to localStorage
-  useEffect(() => {
-    if (Object.keys(outOfMarks).length > 0) {
-      localStorage.setItem("lastOutOfMarks", JSON.stringify(outOfMarks));
-    }
-  }, [outOfMarks]);
 
   const [blobUrls, setBlobUrls] = useState({}); // Track blob URLs for cleanup
   const [studentid, setStudentId] = useState()
@@ -1095,46 +1084,40 @@ const StudentEvaluation = () => {
     );
   }
 
-  // Initialize marks and out-of marks for each question based on questionCount
+  // Consolidate student state initialization and reset logic
   useEffect(() => {
-    if (exam && student && Object.keys(marks).length === 0) {
-   
-      const initialMarks = {};
-      const initialOutOfMarks = {};
+    if (!exam || !student) return;
 
-      // Load saved scheme or fallback to localStorage, then default 10
-      const savedOutOfMarks = student?.outOfMarksStructure
-        ? (student.outOfMarksStructure instanceof Map
-          ? Object.fromEntries(student.outOfMarksStructure)
-          : student.outOfMarksStructure)
-        : JSON.parse(localStorage.getItem("lastOutOfMarks") || "{}");
+    // 1. Determine base values (favor student data if already evaluated)
+    const isEvaluated = student?.status === "evaluated";
+    const persistedScheme = lastSchemes[subjectId] || {};
 
-      // const savedOutOfMarks =
-      //   JSON.parse(localStorage.getItem("lastOutOfMarks")) ||
-      //   student?.outOfMarksStructure ||
-      //   {};
+    const countToUse = isEvaluated && student?.questionCount
+      ? student.questionCount
+      : (persistedScheme.questionCount || 10);
 
-      const countToUse = student?.questionCount || questionCount;
+    const baseOutOfMarks = isEvaluated && student?.outOfMarksStructure
+      ? (student.outOfMarksStructure instanceof Map
+        ? Object.fromEntries(student.outOfMarksStructure)
+        : student.outOfMarksStructure)
+      : (persistedScheme.outOfMarks || {});
 
-      // const countToUse =
-      //   parseInt(localStorage.getItem("lastQuestionCount")) ||
-      //   student?.questionCount ||
-      //   questionCount;
+    // 2. Build initial state
+    const initialMarks = {};
+    const initialOutOfMarks = {};
 
-      for (let i = 1; i <= countToUse; i++) {
-        const qKey = `q${i}`;
-        initialMarks[qKey] = 0;
-        initialOutOfMarks[qKey] = savedOutOfMarks[qKey] !== undefined ? savedOutOfMarks[qKey] : 10;
-      }
-      setMarks(initialMarks);
-      setOutOfMarks(initialOutOfMarks);
-
-      // Sync questionCount if student has a saved one
-      if (student?.questionCount && student.questionCount !== questionCount) {
-        setQuestionCount(student.questionCount);
-      }
+    for (let i = 1; i <= countToUse; i++) {
+      const qKey = `q${i}`;
+      initialMarks[qKey] = 0; // Reset marks to 0 for a fresh evaluation session
+      initialOutOfMarks[qKey] = baseOutOfMarks[qKey] !== undefined ? baseOutOfMarks[qKey] : 10;
     }
-}, [exam, student, questionCount]);
+
+    // 3. Update all three states in one render cycle
+    setQuestionCount(countToUse);
+    setMarks(initialMarks);
+    setOutOfMarks(initialOutOfMarks);
+
+  }, [studentId, subjectId, !!exam, !!student]); // Only re-run on student navigation or initial data load
 
   // Calculate totals using useMemo for reactive computation
   const { calculatedTotalMarks, calculatedTotalPossibleMarks } = useMemo(() => {
@@ -1195,11 +1178,12 @@ const StudentEvaluation = () => {
 
   const handleOutOfMarksChange = (question, value) => {
     const newOutOf = parseFloat(value) || 0;
+    const newOutOfMarks = { ...outOfMarks, [question]: newOutOf };
 
-    setOutOfMarks(prev => ({
-      ...prev,
-      [question]: newOutOf
-    }));
+    setOutOfMarks(newOutOfMarks);
+
+    // Sync to context immediately
+    updateScheme(subjectId, { questionCount, outOfMarks: newOutOfMarks });
 
     // Clamp existing mark if it's now greater than new outOf
     setMarks(prev => ({
@@ -1238,8 +1222,7 @@ const StudentEvaluation = () => {
         }
       );
 
-      localStorage.setItem("lastOutOfMarks", JSON.stringify(outOfMarks));
-      localStorage.setItem("lastQuestionCount", questionCount);
+      updateScheme(subjectId, { questionCount, outOfMarks });
 
 
       // 🔹 Update local exam data after success
@@ -1343,19 +1326,22 @@ const StudentEvaluation = () => {
 
                   const newMarks = {};
                   const newOutOfMarks = {};
-                  const lastUsedOutOfMarks = JSON.parse(localStorage.getItem("lastOutOfMarks") || "{}");
+                  const lastUsedOutOfMarks = lastSchemes[subjectId]?.outOfMarks || {};
 
                   for (let i = 1; i <= newCount; i++) {
                     const qKey = `q${i}`;
                     newMarks[qKey] = marks[qKey] || 0;
                     newOutOfMarks[qKey] =
                       student?.outOfMarksStructure?.[qKey] ??
-                      lastUsedOutOfMarks?.[qKey] ??
+                      lastSchemes[subjectId]?.outOfMarks?.[qKey] ??
                       10;
                   }
 
                   setMarks(newMarks);
                   setOutOfMarks(newOutOfMarks);
+
+                  // Immediately update context so it persists for the next student
+                  updateScheme(subjectId, { questionCount: newCount, outOfMarks: newOutOfMarks });
                 }}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
               >
