@@ -11,6 +11,7 @@ import {
   FaKey,
   FaRedo,
   FaCheckCircle,
+  FaCopy,
 } from "react-icons/fa";
 import { fileToBase64 } from "../../utils/fileUtils";
 
@@ -219,12 +220,14 @@ const CreateExam = () => {
     // }
 
     // ================= FORM DATA =================
+    const generatedKey = Math.random().toString(36).substring(2, 8).toUpperCase();
     const formData = new FormData();
     // Exam info
     formData.append("title", exam.title);
     formData.append("department", exam.department);
     formData.append("year", exam.year);
     formData.append("subject", exam.subject);
+    formData.append("examKey", generatedKey); // 🔑 Send the access key
     formData.append("questionPaper", questionPaper);
     formData.append("answerKey", answerKey);
 
@@ -257,7 +260,7 @@ const CreateExam = () => {
       });
 
       showMessage("✅ Exam created successfully!", "success");
-      setCreatedExamInfo({ ...exam });
+      setCreatedExamInfo({ ...exam, examKey: generatedKey });
       setShowSuccessModal(true);
 
       // ================= RESET FORM =================
@@ -752,6 +755,25 @@ const CreateExam = () => {
                   <span className="text-gray-500 text-sm italic">Subject</span>
                   <span className="font-semibold text-gray-900">{createdExamInfo?.subject}</span>
                 </div>
+                <div className="flex justify-between items-center py-4 bg-blue-50 px-4 rounded-xl border border-blue-100">
+                  <div className="flex flex-col">
+                    <span className="text-blue-600 text-xs font-bold uppercase tracking-wider">Access Key</span>
+                    <span className="text-2xl font-mono font-bold text-blue-900">{createdExamInfo?.examKey}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(createdExamInfo?.examKey);
+                      alert("Key copied to clipboard!");
+                    }}
+                    className="p-3 bg-white text-blue-600 rounded-lg shadow-sm hover:shadow-md transition-all border border-blue-100"
+                    title="Copy Key"
+                  >
+                    <FaCopy size={20} />
+                  </button>
+                </div>
+                <p className="text-xs text-center text-gray-500 mt-2">
+                  Please share this key with the teacher who will evaluate the exam.
+                </p>
               </div>
             </div>
           </div>

@@ -92,6 +92,11 @@ const ExamSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    examKey: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
     // 🔥 NEW FIELD
     status: {

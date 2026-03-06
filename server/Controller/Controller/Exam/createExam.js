@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 
 export const createExam = async (req, res) => {
   try {
-    const { title, department, year, subject, studentsData } = req.body;
+    const { title, department, year, subject, studentsData, examKey } = req.body;
     const { role } = req.user;
 
     if (role !== "controller") {
@@ -12,8 +12,8 @@ export const createExam = async (req, res) => {
         .json({ message: "Access denied, only controllers can create exams" });
     }
 
-    if (!title || !department || !year || !subject || !studentsData) {
-      return res.status(400).json({ message: "All exam fields are required" });
+    if (!title || !department || !year || !subject || !studentsData || !examKey) {
+      return res.status(400).json({ message: "All exam fields are required including exam Key" });
     }
 
     // Parse students
@@ -54,6 +54,7 @@ export const createExam = async (req, res) => {
       students: studentsArray,
       questionPaper,
       answerKey,
+      examKey, // 🔑 Store the access key
       status: "pending",
     });
 

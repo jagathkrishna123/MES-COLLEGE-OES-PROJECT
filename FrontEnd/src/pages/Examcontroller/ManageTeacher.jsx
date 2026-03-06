@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaUser, FaEnvelope, FaSchool, FaCalendarAlt, FaBan, FaCheck, FaTrash, FaEdit } from "react-icons/fa";
+import { FaUser, FaEnvelope, FaSchool, FaCalendarAlt, FaBan, FaCheck, FaTrash, FaEdit, FaBook } from "react-icons/fa";
 import axios from "axios";
 const ManageTeacher = () => {
   const [teachers, setTeachers] = useState([]);
@@ -23,7 +23,9 @@ const ManageTeacher = () => {
       filtered = filtered.filter(teacher =>
         teacher.name && teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         teacher.email && teacher.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        teacher.department && teacher.department.toLowerCase().includes(searchTerm.toLowerCase())
+        teacher.department && teacher.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        teacher.subject && teacher.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        teacher.year && teacher.year.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -267,6 +269,16 @@ const ManageTeacher = () => {
                   <div className="flex items-center gap-3 text-sm text-gray-600">
                     <FaCalendarAlt className="text-purple-500 flex-shrink-0" />
                     <span>ID: {teacher.teacherId}</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <FaCalendarAlt className="text-indigo-500 flex-shrink-0" />
+                    <span>Academic Year: {teacher.year}</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <FaBook className="text-pink-500 flex-shrink-0" />
+                    <span>Subject: {teacher.subject}</span>
                   </div>
 
                   <div className="flex items-center gap-3 text-sm text-gray-600">
