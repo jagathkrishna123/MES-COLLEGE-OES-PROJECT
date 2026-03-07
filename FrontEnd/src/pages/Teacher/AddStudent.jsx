@@ -61,11 +61,11 @@ const AddStudent = () => {
 
         // 3️⃣ Set available years based on teacher's department
         if (teacherData?.department) {
-          const dept = departmentsData.find(
+          const matchingDepts = departmentsData.filter(
             (d) => d.departmentName === teacherData.department
           );
-
-          setAvailableYears(dept ? dept.year || [] : []);
+          const years = [...new Set(matchingDepts.map(d => d.year))];
+          setAvailableYears(years);
         }
 
       } catch (error) {
@@ -86,8 +86,9 @@ const AddStudent = () => {
 
     // Reset year when department changes
     if (name === "department") {
-      const dept = departments.find((d) => d.departmentName === value);
-      setAvailableYears(dept ? dept.year || [] : []);
+      const matchingDepts = departments.filter((d) => d.departmentName === value);
+      const years = [...new Set(matchingDepts.map(d => d.year))];
+      setAvailableYears(years);
 
       setFormData({
         ...formData,
@@ -154,9 +155,9 @@ const AddStudent = () => {
       if (response.status === 201) {
         showMessage("✅ Student added successfully!", "success");
 
-         setTimeout(() => {
-    window.location.reload();
-  }, 1000);
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
 
         // Reset form data
         setFormData({
@@ -169,10 +170,11 @@ const AddStudent = () => {
 
         // Update available years dynamically
         if (teacher.department) {
-          const dept = departments.find(
+          const matchingDepts = departments.filter(
             (d) => d.departmentName === teacher.department
           );
-          setAvailableYears(dept ? Object.keys(dept.year) : []);
+          const years = [...new Set(matchingDepts.map(d => d.year))];
+          setAvailableYears(years);
         } else {
           setAvailableYears([]);
         }
@@ -188,9 +190,7 @@ const AddStudent = () => {
   };
 
 
-  const yearsArray = typeof availableYears === "string"
-    ? availableYears.split(",").map(y => y.trim())
-    : availableYears;
+  const yearsArray = Array.isArray(availableYears) ? availableYears : [];
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-blue-50 p-6 font-out">
       {/* Header */}
